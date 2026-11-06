@@ -19,16 +19,35 @@ logger = logging.getLogger(__name__)
 
 
 def load_summarizer():
-    """Load the real Hugging Face pipeline for normal execution."""
+    """Load BART and expose the callable contract used by the API."""
     import torch
-    from transformers import pipeline
+    from transformers import AutoTokenizer, BartForConditionalGeneration
+
+    class BartSummarizer:
+        """Compatibility wrapper for the pipeline removed in Transformers 5."""
+
+        def __init__(self, model_name):
+            self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            self.model = BartForConditionalGeneration.from_pretrained(model_name)
+            self.model.to(self.device)
+            self.model.eval()
+
+        def __call__(self, text, max_length, min_length, do_sample=False):
+            inputs = self.tokenizer(text, return_tensors="pt", truncation=False)
+            inputs = {name: tensor.to(self.device) for name, tensor in inputs.items()}
+            with torch.inference_mode():
+                summary_ids = self.model.generate(
+                    **inputs,
+                    max_length=max_length,
+                    min_length=min_length,
+                    do_sample=do_sample,
+                )
+            summary_text = self.tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+            return [{"summary_text": summary_text}]
 
     logger.info("Loading summarization model %s", MODEL_NAME)
-    model = pipeline(
-        "summarization",
-        model=MODEL_NAME,
-        device=0 if torch.cuda.is_available() else -1,
-    )
+    model = BartSummarizer(MODEL_NAME)
     logger.info("Summarization model loaded")
     return model
 

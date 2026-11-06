@@ -4,11 +4,11 @@ Ce document décrit l'implémentation réellement présente dans `backend/app.py
 
 ## Rôle du service
 
-Le backend est une API Flask qui charge le pipeline Hugging Face `facebook/bart-large-cnn`, valide les requêtes, génère un résumé abstractive et renvoie une réponse JSON. Dans Docker Compose, le frontend Gradio l'appelle avec le nom DNS interne `http://backend:5000`.
+Le backend est une API Flask qui charge le modèle Hugging Face `facebook/bart-large-cnn`, valide les requêtes, génère un résumé abstractive et renvoie une réponse JSON. Dans Docker Compose, le frontend Gradio l'appelle avec le nom DNS interne `http://backend:5000`.
 
 ## Initialisation du modèle
 
-La fonction `load_summarizer()` importe PyTorch et Transformers au moment du chargement, puis crée un pipeline de type `summarization`. Le Dockerfile installe la variante CPU officielle de PyTorch 2.15.0 ; le conteneur n'embarque donc aucune dépendance CUDA ou NVIDIA.
+La fonction `load_summarizer()` importe PyTorch et Transformers au moment du chargement, puis initialise `AutoTokenizer` et `BartForConditionalGeneration`. Transformers 5 ayant retiré le pipeline historique `summarization`, un adaptateur local appelle désormais `model.generate()` tout en conservant le même contrat pour l'API. Le Dockerfile installe la variante CPU officielle de PyTorch 2.15.0 ; le conteneur n'embarque donc aucune dépendance CUDA ou NVIDIA.
 
 Le modèle est normalement chargé une seule fois au démarrage du processus. La variable `BART_SKIP_MODEL_LOAD=1` désactive ce chargement pour les tests automatisés, qui injectent un faux pipeline dans `create_app()` et ne téléchargent pas BART.
 
@@ -37,7 +37,7 @@ Le corps doit être un objet JSON contenant :
 }
 ```
 
-`max_length` et `min_length` sont facultatifs. Les valeurs par défaut sont respectivement 130 et 30. Ces paramètres correspondent à la longueur de génération manipulée par le pipeline Transformers, exprimée en tokens, et non à un nombre garanti de mots.
+`max_length` et `min_length` sont facultatifs. Les valeurs par défaut sont respectivement 130 et 30. Ces paramètres correspondent à la longueur de génération manipulée par Transformers, exprimée en tokens, et non à un nombre garanti de mots.
 
 Une réponse réussie contient le résumé ainsi que les nombres de mots du texte initial et du résultat :
 
@@ -73,7 +73,7 @@ Le modèle `facebook/bart-large-cnn` est principalement entraîné pour l'anglai
 - Python 3.11
 - Flask 3.1.3
 - Werkzeug 3.1.9
-- Transformers 4.49.0
+- Transformers 5.10.4
 - PyTorch 2.15.0 CPU
 - SentencePiece 0.2.2
 
@@ -93,7 +93,7 @@ Le serveur Flask intégré convient à cette démonstration locale. Pour une exp
 
 ## Tests
 
-La suite `backend/tests` utilise le client de test Flask et un pipeline simulé. Elle vérifie la disponibilité, une génération valide, les entrées courtes ou trop longues, les paramètres invalides, le JSON mal formé et la non-divulgation des exceptions internes.
+La suite `backend/tests` utilise le client de test Flask et un générateur simulé. Elle vérifie la disponibilité, une génération valide, les entrées courtes ou trop longues, les paramètres invalides, le JSON mal formé et la non-divulgation des exceptions internes.
 
 Depuis la racine du projet :
 

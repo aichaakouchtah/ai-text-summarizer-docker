@@ -731,7 +731,7 @@ custom_css = """
 }
 """
 
-with gr.Blocks(title="Système de Résumé Automatique", theme=gr.themes.Base(), css=custom_css) as interface:
+with gr.Blocks(title="Système de Résumé Automatique") as interface:
     
     gr.HTML(
         """
@@ -893,5 +893,7 @@ if __name__ == "__main__":
     interface.launch(
         server_name="0.0.0.0",
         server_port=7860,
-        share=False
+        share=False,
+        theme=gr.themes.Base(),
+        css=custom_css
     )

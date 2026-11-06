@@ -22,10 +22,10 @@ The project demonstrates how to package an AI inference service and a web interf
 
 | Layer | Technology |
 | --- | --- |
-| Frontend | Gradio 4.44.1, Requests 2.32.3 |
-| Web stack | FastAPI 0.112.2, Starlette 0.38.6, Jinja2 3.1.4 |
+| Frontend | Gradio 6.16.0, Gradio Client 2.5.0, Requests 2.32.3 |
+| Web stack | FastAPI 0.162.0, Starlette 1.3.1, Jinja2 3.1.4 |
 | Backend | Python 3.11, Flask 3.1.3, Werkzeug 3.1.9 |
-| AI | Transformers 4.49.0, PyTorch 2.15.0 CPU, SentencePiece 0.2.2 |
+| AI | Transformers 5.10.4, PyTorch 2.15.0 CPU, SentencePiece 0.2.2 |
 | Model | `facebook/bart-large-cnn` |
 | Platform | Docker, Docker Compose |
 | Tests | pytest 8.3.5, Flask test client, mocks |
