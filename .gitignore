@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+.venv*/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs and local artifacts
+*.log
+dist/
+build/
+*.tmp
+*.temp
+*.bak
+*.swp
+
+# Local AI/model caches and downloaded weights
+.cache/
+cache/
+huggingface/
+model-cache/
+models/
+*.bin
+*.safetensors
+*.pt
+*.pth
+
+# Local UI captures (the curated documentation image remains tracked)
+ui-*.png

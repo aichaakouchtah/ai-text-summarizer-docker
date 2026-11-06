@@ -1,0 +1,49 @@
+
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: summarizer-backend
+    ports:
+      - "127.0.0.1:5000:5000"
+    environment:
+      - TRANSFORMERS_CACHE=/app/cache
+      - HF_HOME=/app/cache
+    volumes:
+      - model-cache:/app/cache
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
+    shm_size: '2gb'
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health', timeout=5)"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 180s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: summarizer-frontend
+    ports:
+      - "127.0.0.1:7860:7860"
+    depends_on:
+      backend:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    restart: unless-stopped
+
+volumes:
+  model-cache:
+    driver: local

@@ -1,0 +1,214 @@
+╔══════════════════════════════════════════════════════════════════════════╗
+║           SCHÉMA DE FONCTIONNEMENT DU SYSTÈME DE RÉSUMÉ                  ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           UTILISATEUR                                    │
+│                                                                           │
+│  Tape un texte long dans l'interface web                                 │
+│  Exemple : "L'intelligence artificielle transforme..." (250 mots)       │
+└───────────────────────────────┬──────────────────────────────────────────┘
+                                │
+                                │ Clique sur "Générer le résumé"
+                                ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         FRONTEND (Gradio)                                │
+│  Port : 7860                                                             │
+│                                                                           │
+│  1. Vérifie que le texte fait ≥ 30 mots                                 │
+│  2. Prépare la requête HTTP                                              │
+│     {                                                                     │
+│       "text": "Le texte à résumer...",                                   │
+│       "max_length": 150,                                                  │
+│       "min_length": 40                                                    │
+│     }                                                                     │
+└───────────────────────────────┬──────────────────────────────────────────┘
+                                │
+                                │ Requête HTTP POST
+                                │ http://backend:5000/summarize
+                                ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         BACKEND (Flask)                                  │
+│  Port : 5000                                                             │
+│                                                                           │
+│  ┌─────────────────────────────────────────────────────────────┐        │
+│  │  Route : /summarize                                          │        │
+│  │                                                               │        │
+│  │  1. Reçoit les données JSON                                  │        │
+│  │  2. Valide le texte (≥ 30 mots)                              │        │
+│  │  3. Extrait les paramètres (max_length, min_length)          │        │
+│  │                                                               │        │
+│  │  4. ╔═══════════════════════════════════════════════╗        │        │
+│  │     ║  APPEL À BART (LA MAGIE !)                    ║        │        │
+│  │     ║                                               ║        │        │
+│  │     ║  summarizer(text, max_length, min_length)     ║        │        │
+│  │     ╚═══════════════════════════════════════════════╝        │        │
+│  │                                                               │        │
+│  │  5. BART analyse le texte (2-10 secondes)                    │        │
+│  │  6. BART génère le résumé                                    │        │
+│  │  7. Retourne le résultat                                     │        │
+│  └─────────────────────────────────────────────────────────────┘        │
+└───────────────────────────────┬──────────────────────────────────────────┘
+                                │
+                                │ Réponse JSON
+                                │ {
+                                │   "original_length": 250,
+                                │   "summary": "Le résumé...",
+                                │   "summary_length": 45
+                                │ }
+                                ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         FRONTEND (Gradio)                                │
+│                                                                           │
+│  1. Reçoit la réponse JSON                                               │
+│  2. Affiche le résumé avec les statistiques                              │
+│     - Longueur originale : 250 mots                                      │
+│     - Longueur du résumé : 45 mots                                       │
+│     - Taux de compression : 82%                                          │
+│  3. Affiche le résumé généré                                            │
+└───────────────────────────────┬──────────────────────────────────────────┘
+                                │
+                                │ Affiche le résultat
+                                ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           UTILISATEUR                                    │
+│                                                                           │
+│  Voit le résumé généré par BART !                                        │
+│  Exemple : "L'IA transforme le quotidien..." (45 mots)                   │
+└─────────────────────────────────────────────────────────────────────────┘
+
+
+╔══════════════════════════════════════════════════════════════════════════╗
+║                    COMMENT BART FONCTIONNE                               ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│  TEXTE ORIGINAL (250 mots)                                               │
+│  ─────────────────────────────────────────────────────────────────────  │
+│  "L'intelligence artificielle transforme notre quotidien. Les           │
+│   entreprises adoptent massivement ces technologies pour améliorer      │
+│   leur productivité. Les assistants vocaux comme Alexa et Siri           │
+│   deviennent omniprésents. Les voitures autonomes se développent..."     │
+└─────────────────────────────────────────────────────────────────────────┘
+                                │
+                                │ BART lit et analyse
+                                ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│  BART IDENTIFIE LES IDÉES PRINCIPALES                                    │
+│  ─────────────────────────────────────────────────────────────────────  │
+│  • L'IA transforme le quotidien                                         │
+│  • Les entreprises l'adoptent                                           │
+│  • Les assistants vocaux sont partout                                   │
+│  • Les voitures autonomes progressent                                   │
+└─────────────────────────────────────────────────────────────────────────┘
+                                │
+                                │ BART génère un résumé
+                                ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│  RÉSUMÉ GÉNÉRÉ (45 mots)                                                 │
+│  ─────────────────────────────────────────────────────────────────────  │
+│  "L'intelligence artificielle transforme le quotidien. Les entreprises  │
+│   l'adoptent pour améliorer leur productivité. Les assistants vocaux    │
+│   et les voitures autonomes se développent rapidement."                 │
+└─────────────────────────────────────────────────────────────────────────┘
+
+RÉSULTAT : 250 mots → 45 mots (82% de compression, sens préservé !)
+
+
+╔══════════════════════════════════════════════════════════════════════════╗
+║                    ARCHITECTURE TECHNIQUE                                ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          DOCKER COMPOSE                                  │
+│                                                                           │
+│  ┌──────────────────────┐         ┌──────────────────────┐              │
+│  │   FRONTEND           │         │   BACKEND            │              │
+│  │   (Gradio)           │         │   (Flask + BART)     │              │
+│  │                      │         │                      │              │
+│  │  Port : 7860         │◄───────►│  Port : 5000         │              │
+│  │                      │  HTTP   │                      │              │
+│  │  Interface web       │         │  API REST            │              │
+│  │  - Saisie texte      │         │  - /health           │              │
+│  │  - Affichage résultat│         │  - /summarize        │              │
+│  └──────────────────────┘         └──────────────────────┘              │
+│           │                                   │                          │
+│           │                                   │                          │
+│           └───────────────────────────────────┘                          │
+│                           Volume partagé                                 │
+│                      (cache des modèles BART)                            │
+└─────────────────────────────────────────────────────────────────────────┘
+
+
+╔══════════════════════════════════════════════════════════════════════════╗
+║                    FLUX DE DONNÉES DÉTAILLÉ                              ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+1. DÉMARRAGE DU BACKEND
+   ────────────────────
+   Backend démarre
+   │
+   ├─> Charge Flask (serveur web)
+   │
+   └─> Charge BART (modèle IA) ⏱️ 30s-2min
+       │
+       ├─> Télécharge le modèle (1.6 Go) si première fois
+       │
+       └─> Charge en mémoire RAM (~2-4 Go)
+           │
+           └─> Prêt à résumer !
+
+
+2. REQUÊTE DE RÉSUMÉ
+   ──────────────────
+   Frontend → Backend : POST /summarize
+   │
+   ├─> Backend reçoit : {"text": "...", "max_length": 150}
+   │
+   ├─> Validation : texte ≥ 30 mots ?
+   │   ├─> NON → Erreur 400
+   │   └─> OUI → Continue
+   │
+   ├─> Appel BART : summarizer(text, max_length, min_length)
+   │   │
+   │   ├─> BART lit le texte (tokenisation)
+   │   │
+   │   ├─> BART analyse (compréhension du sens)
+   │   │
+   │   ├─> BART identifie les idées principales
+   │   │
+   │   └─> BART génère le résumé ⏱️ 2-10 secondes
+   │
+   └─> Backend → Frontend : {"summary": "...", "original_length": 250}
+
+
+3. AFFICHAGE
+   ─────────
+   Frontend reçoit la réponse
+   │
+   └─> Affiche :
+       ├─> Statistiques (longueur, compression)
+       └─> Résumé généré
+
+
+╔══════════════════════════════════════════════════════════════════════════╗
+║                    ANALOGIE SIMPLE                                       ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+Imaginez un RESTAURANT :
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│  CLIENT (Frontend)          SERVEUR (Backend)        CUISINE (BART)      │
+│                                                                           │
+│  "Je veux un résumé"   ──►  Prend la commande   ──►  Prépare le résumé  │
+│                                                                           │
+│  Reçoit le résumé      ◄──  Apporte le plat      ◄──  Résumé prêt       │
+└─────────────────────────────────────────────────────────────────────────┘
+
+• Le CLIENT = Frontend (vous, l'utilisateur)
+• Le SERVEUR = Flask (prend les commandes, sert les résultats)
+• La CUISINE = BART (fait le vrai travail de résumé)
+
+BART est comme un chef qui a étudié des millions de textes et leurs résumés,
+et qui sait maintenant comment résumer n'importe quel texte automatiquement !
+
